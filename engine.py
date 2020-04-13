@@ -1,4 +1,4 @@
-'''Define the game object and all possible states'''
+'''Define the game mechanics and all possible states'''
 import random
 from enum import Enum
 import pygame
@@ -21,10 +21,9 @@ class Game():
         '''Initialise the game objects'''
         self.state = GameStates.MENU
         self.player = entities.Player(position=Vector(370, 480))
-        self.enemy_grid = entities.EnemyGrid(dimentions=(8, 3), position=Vector(100, 50), spacing=Vector(80, 70))
+        self.enemy_grid = entities.EnemyGrid(dimentions=(8, 3), position=Vector(100, 50), spacing=Vector(80, 90))
         self.bullets = []
         self.bombs = []
-        self.score = 0
 
     def check_input(self):
         '''Check the input and make the changes to the game objects, defining the controls'''
@@ -32,9 +31,9 @@ class Game():
             if event.type == pygame.QUIT:
                 self.state = GameStates.QUIT
             if event.type == pygame.KEYDOWN:
-                if event.key == 276 or event.unicode == 'a':
+                if event.key == 276 or event.key == 97:
                     self.player.update_velocity(Directions.LEFT)
-                if event.key == 275 or event.unicode == 'd':
+                if event.key == 275 or event.key == 100:
                     self.player.update_velocity(Directions.RIGHT)
                 if event.unicode == ' ':
                     self.player.fire()
@@ -43,31 +42,22 @@ class Game():
                     self.player.update_velocity(Directions.NONE)
 
     def update(self, resolution, fps, dt, timestep, time):
-        # update player
+        # move player
         self.player.update_position(dt, limits=resolution)
+
+        # fire bullet
         if self.player.firing is True:
-            self.bullets.append(entities.Bullet(position=self.player.position + Vector(21, -64)))
+            self.bullets.append(entities.Bullet(position=self.player.position + Vector(21, -64), damage=self.player.damage))
             self.player.firing = False
-        if self.player.last_timestep_fire is not None:
-            self.player.last_timestep_fire += 1
+        if self.player.last_time_fire is not None:
+            self.player.last_time_fire += dt
 
-        # update enemies
-        if int(timestep * 2.5) % fps  == 0:
-            self.enemy_grid.update_position(limits=resolution)
-        for enemy in self.enemy_grid.enemies:
-            if collision(enemy, self.player):
-                self.player.health -= 10
-                self.enemy_grid.enemies.remove(enemy)
-
-        # update bombs
-        if int(timestep * 2.0) % fps  == 0:
-            for enemy in self.enemy_grid.enemies:
-                if random.random() < enemy.fire_chance:
-                    self.bombs.append(entities.Bomb(position=enemy.position + Vector(21, 34)))
-
-        # update bullets
+        # move bullets
         for bullet in self.bullets:
             bullet.update_position(dt)
+
+        # check bullet collision
+        for bullet in self.bullets:
             if bullet.position.y <= -bullet.hieght:
                 self.bullets.remove(bullet)
             for enemy in self.enemy_grid.enemies:
@@ -76,14 +66,37 @@ class Game():
                         self.bullets.remove(bullet)
                     except ValueError:
                         pass
-                    self.enemy_grid.enemies.remove(enemy)
-                    self.score += 1
+                    enemy.hit(self, bullet)
 
-        # update bombs
+        # move enemies
+        if int(timestep * self.enemy_grid.move_rate) % fps == 0:
+            self.enemy_grid.update_position(limits=resolution)
+
+        # remove dead enemies
+        for enemy in self.enemy_grid.enemies:
+            if enemy.health <= 0:
+                self.enemy_grid.enemies.remove(enemy)
+
+        # fire bombs
+        for enemy in self.enemy_grid.enemies:
+            if int(timestep * enemy.fire_rate) % fps  == 0:
+                if random.random() < enemy.fire_chance:
+                    self.bombs.append(entities.Bomb(position=enemy.position + Vector(35, 40), damage=enemy.damage, color=enemy.color))
+
+        # move bombs
         for bomb in self.bombs:
             bomb.update_position(dt)
+
+        # check bomb collision
+        for bomb in self.bombs:
             if bomb.position.y > resolution[1] + bomb.hieght:
                 self.bombs.remove(bomb)
             if collision(bomb, self.player):
-                self.player.health -= 10
+                self.player.hit(self, bomb)
                 self.bombs.remove(bomb)
+
+        # check player-enemy collision
+        for enemy in self.enemy_grid.enemies:
+            if collision(enemy, self.player):
+                self.player.health -= enemy.damage * 3
+                self.enemy_grid.enemies.remove(enemy)

@@ -7,7 +7,7 @@ def main(resolution, fps):
     # initialse pygame
     pygame.init()
 
-    # frame rate
+    # set up frame rate
     clock = pygame.time.Clock()
     dt = 1.0 / float(fps)
     timestep = 0
@@ -16,7 +16,10 @@ def main(resolution, fps):
     # create the buffer and display
     buffer = pygame.display.set_mode(resolution)
     pygame.display.set_caption('Space Invaders - L4D')
-    pygame.display.set_icon(pygame.image.load('data/spaceship.png'))
+    pygame.display.set_icon(pygame.image.load('data/enemy.png'))
+
+    # enable smooth controls
+    pygame.key.set_repeat(10,10)
 
     # initialse the game
     game = engine.Game()

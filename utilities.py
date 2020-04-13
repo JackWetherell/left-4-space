@@ -1,4 +1,6 @@
+'''Define miscellaneous game utilities'''
 from enum import Enum
+import copy
 
 
 class Directions(Enum):
@@ -40,8 +42,14 @@ class Vector:
 
 
 def collision(entity1, entity2):
-    rect1 = entity1.image.get_rect()
-    rect2 = entity2.image.get_rect()
+    try:
+        rect1 = entity1.image.get_rect()
+    except AttributeError:
+        rect1 = copy.deepcopy(entity1.rect)
+    try:
+        rect2 = entity2.image.get_rect()
+    except AttributeError:
+        rect2 = copy.deepcopy(entity2.rect)
     rect1.move_ip(entity1.position.x, entity1.position.y)
     rect2.move_ip(entity2.position.x, entity2.position.y)
     return rect1.colliderect(rect2)
