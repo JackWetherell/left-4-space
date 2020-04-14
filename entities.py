@@ -241,8 +241,12 @@ class EnemyGrid():
                 break
 
     def shift(self):
+        max_y = 0
         for enemy in self.enemies:
             enemy.step.x = -enemy.step.x
             enemy.update_position()
-            if enemy.position.y < 550:
+            if enemy.position.y > max_y:
+                max_y = enemy.position.y
+        if max_y < 450:
+            for enemy in self.enemies:
                 enemy.shift()

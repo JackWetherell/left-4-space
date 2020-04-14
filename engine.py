@@ -18,7 +18,6 @@ class GameStates(Enum):
 
 class Game():
     def __init__(self):
-        '''Initialise the game objects'''
         self.state = GameStates.MENU
         self.player = entities.Player(position=Vector(370, 480))
         self.enemy_grid = entities.EnemyGrid(dimentions=(8, 3), position=Vector(100, 50), spacing=Vector(80, 90))
@@ -26,7 +25,6 @@ class Game():
         self.bombs = []
 
     def check_input(self):
-        '''Check the input and make the changes to the game objects, defining the controls'''
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.state = GameStates.QUIT
@@ -98,5 +96,5 @@ class Game():
         # check player-enemy collision
         for enemy in self.enemy_grid.enemies:
             if collision(enemy, self.player):
-                self.player.health -= enemy.damage * 3
+                self.player.health -= enemy.damage*3
                 self.enemy_grid.enemies.remove(enemy)

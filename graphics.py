@@ -21,7 +21,6 @@ class Colors(Enum):
 
 
 def draw(game, buffer):
-    '''Draw all of the elements to the buffer'''
     # draw the background
     buffer.fill(Colors.BACKGROUND.value)
 
