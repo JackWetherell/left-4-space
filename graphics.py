@@ -29,6 +29,8 @@ def draw(game, buffer):
         pygame.draw.circle(buffer, Colors.SMOKER.value, (int(game.player.position.x + game.player.width/2.0) ,int(game.player.position.y + game.player.width/2.0)), game.player.width)
     if game.player.pinned_by == entities.Hunter:
         pygame.draw.circle(buffer, Colors.HUNTER.value, (int(game.player.position.x + game.player.width/2.0) ,int(game.player.position.y + game.player.width/2.0)), game.player.width)
+    if game.player.pinned_by == entities.Jockey:
+        pygame.draw.circle(buffer, Colors.JOCKEY.value, (int(game.player.position.x + game.player.width/2.0) ,int(game.player.position.y + game.player.width/2.0)), game.player.width)
     buffer.blit(game.player.image, tuple(game.player.position))
 
     # draw the enemies

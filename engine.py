@@ -68,7 +68,7 @@ class Game():
 
         # move enemies
         if int(timestep * self.enemy_grid.move_rate) % fps == 0:
-            self.enemy_grid.update_position(limits=resolution)
+            self.enemy_grid.update_position(dt, limits=resolution)
 
         # remove dead enemies
         for enemy in self.enemy_grid.enemies:

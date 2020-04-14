@@ -1,5 +1,6 @@
 '''Define all game entities: player, enemies and projectiles'''
 import random
+import math
 from abc import ABC as Interface
 from abc import abstractmethod
 import pygame
@@ -28,7 +29,7 @@ class Player(IEntitiy):
         self.health = self.max_health
         self.damage = 5
         self.pinned_by = None
-        self.pin_time = 2.0
+        self.pin_time = 3.0
 
     def update_velocity(self, direction):
         if direction == Directions.LEFT:
@@ -46,6 +47,12 @@ class Player(IEntitiy):
                 self.pinned_for += dt
                 if self.pinned_by == Hunter:
                     self.health -= 5.0*dt
+                if self.pinned_by == Jockey:
+                    self.position.x += math.sin(2*self.pinned_for)
+                    if self.position.x <= 0:
+                        self.position.x = 0
+                    if self.position.x >= limits[0] - self.width:
+                        self.position.x = limits[0] - self.width
             else:
                 self.pinned_by = None
         else:
@@ -69,6 +76,11 @@ class Player(IEntitiy):
         elif bomb.color == graphics.Colors.HUNTER:
             self.pinned_by = Hunter
             self.pinned_for = 0.0
+        elif bomb.color == graphics.Colors.JOCKEY:
+            self.pinned_by = Jockey
+            self.pinned_for = 0.0
+        else:
+            pass
 
 
 class Bullet(IEntitiy):
@@ -112,7 +124,7 @@ class Enemy(IEntitiy):
         self.health = self.max_health
         self.color = graphics.Colors.ENEMY
 
-    def update_position(self):
+    def update_position(self, dt):
         self.position.x += self.step.x
 
     def shift(self):
@@ -138,13 +150,13 @@ class Witch(Enemy):
         self.image = pygame.image.load('data/witch.png')
         self.fire_chance = 0.0
         self.damage = 100
-        self.max_health = 150
+        self.max_health = 100
         self.health = self.max_health
         self.color = graphics.Colors.WITCH
 
-    def update_position(self):
+    def update_position(self, dt):
         self.position.x += self.step.x
-        self.health -= 1
+        self.health -= 1.5
 
     def hit(self, game, bullet):
         game.player.health -= self.damage
@@ -156,8 +168,8 @@ class Tank(Enemy):
     def __init__(self, position):
         super().__init__(position)
         self.image = pygame.image.load('data/tank.png')
-        self.fire_chance = 0.1
-        self.damage = 50
+        self.fire_chance = 0.15
+        self.damage = 30
         self.max_health = 100
         self.health = self.max_health
         self.color = graphics.Colors.TANK
@@ -169,14 +181,11 @@ class Boomer(Enemy):
     def __init__(self, position):
         super().__init__(position)
         self.image = pygame.image.load('data/boomer.png')
-        self.fire_chance = 0.0
-        self.damage = 50
+        self.fire_chance = 0.1
+        self.damage = 5
         self.max_health = 5
         self.health = self.max_health
         self.color = graphics.Colors.BOOMER
-
-    def update_position(self):
-        self.position.x += self.step.x
 
     def hit(self, game, bullet):
         for enemy in game.enemy_grid.enemies:
@@ -190,7 +199,7 @@ class Smoker(Enemy):
     def __init__(self, position):
         super().__init__(position)
         self.image = pygame.image.load('data/smoker.png')
-        self.fire_chance = 0.10
+        self.fire_chance = 0.15
         self.damage = 5
         self.max_health = 20
         self.health = self.max_health
@@ -203,11 +212,24 @@ class Hunter(Enemy):
     def __init__(self, position):
         super().__init__(position)
         self.image = pygame.image.load('data/hunter.png')
-        self.fire_chance = 0.10
+        self.fire_chance = 0.15
         self.damage = 5
         self.max_health = 20
         self.health = self.max_health
         self.color = graphics.Colors.HUNTER
+
+
+class Jockey(Enemy):
+    probability = 0.04
+
+    def __init__(self, position):
+        super().__init__(position)
+        self.image = pygame.image.load('data/jockey.png')
+        self.fire_chance = 0.15
+        self.damage = 5
+        self.max_health = 20
+        self.health = self.max_health
+        self.color = graphics.Colors.JOCKEY
 
 
 class EnemyGrid():
@@ -218,9 +240,9 @@ class EnemyGrid():
             for j in range(dimentions[1]):
                 x = position.x + spacing.x * i
                 y = position.y + spacing.y * j
-                # enemy = Hunter(position=Vector(x, y))
+                # enemy = Jockey(position=Vector(x, y))
                 enemy = None
-                for special in [Hunter, Smoker, Boomer, Tank, Witch]:
+                for special in [Jockey, Hunter, Smoker, Boomer, Tank, Witch]:
                     if random.random() < special.probability:
                         enemy = special(position=Vector(x, y))
                         break
@@ -229,22 +251,22 @@ class EnemyGrid():
                 self.enemies.append(enemy)
                 # return
 
-    def update_position(self, limits):
+    def update_position(self, dt, limits):
         for enemy in self.enemies:
-            enemy.update_position()
+            enemy.update_position(dt)
         for enemy in self.enemies:
             if enemy.position.x <= 0:
-                self.shift()
+                self.shift(dt)
                 break
             if enemy.position.x >= limits[0] - enemy.width:
-                self.shift()
+                self.shift(dt)
                 break
 
-    def shift(self):
+    def shift(self, dt):
         max_y = 0
         for enemy in self.enemies:
             enemy.step.x = -enemy.step.x
-            enemy.update_position()
+            enemy.update_position(dt)
             if enemy.position.y > max_y:
                 max_y = enemy.position.y
         if max_y < 450:
